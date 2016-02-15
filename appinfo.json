@@ -28,7 +28,7 @@
                  "type":"font"
                  },
                  {
-                 "characterRegex":"[0-9a-zA-Z°!.| ]",
+                 "characterRegex":"[0-9a-zA-Z°!.|- ]",
                  "file":"fonts/neuropol_x_rg.ttf",
                  "name":"NEUROPOL_X_14",
                  "targetPlatforms":null,
