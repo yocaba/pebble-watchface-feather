@@ -18,6 +18,8 @@
 #include <pebble.h>
 
 #define KEY_TEMPERATURE 0
+#define KEY_LIGHT_COLOR_SCHEME 1
+#define KEY_DEGREE_CELSIUS 2
 
 static Window *s_main_window;
 
@@ -29,6 +31,22 @@ static TextLayer *s_date_layer;
 static TextLayer *s_bt_layer;
 static TextLayer *s_battery_layer;
 static TextLayer *s_temperature_layer;
+
+static bool is_light_color_scheme() {
+    bool light_color_scheme = true; // default
+    if (persist_exists(KEY_LIGHT_COLOR_SCHEME)) {
+       light_color_scheme = persist_read_bool(KEY_LIGHT_COLOR_SCHEME);
+    }
+    return light_color_scheme;
+}
+
+static bool is_degree_celsius() {
+    bool degree_celsius = true; // default
+    if (persist_exists(KEY_DEGREE_CELSIUS)) {
+       degree_celsius = persist_read_bool(KEY_DEGREE_CELSIUS);
+    }
+    return degree_celsius;
+}
 
 static void update_time() {
     
@@ -64,8 +82,11 @@ static void update_battery(int battery_level) {
     text_layer_set_text(s_battery_layer, s_battery_buffer);
 }
 
-static void update_temperature(bool temperature_given, int temperature) {
+static void update_temperature(bool temperature_given, int temperature, bool degree_celsius) {
     
+    if (!degree_celsius) {
+       temperature = temperature * 9/5 + 32;
+    }
     static char temperature_buffer[8];
     if (temperature_given) {
         snprintf(temperature_buffer, sizeof(temperature_buffer), "%d°", temperature);
@@ -73,6 +94,29 @@ static void update_temperature(bool temperature_given, int temperature) {
         strcpy(temperature_buffer, "...");
     }
     text_layer_set_text(s_temperature_layer, temperature_buffer);
+}
+
+static void update_colors(bool light_color_scheme) {
+
+    GColor bg_color = GColorWhite;
+    GColor text_color = GColorBlack;
+
+    if (!light_color_scheme) {
+        bg_color = GColorBlack;
+        text_color = GColorWhite;
+    }
+
+    window_set_background_color(s_main_window, bg_color);
+    text_layer_set_text_color(s_time_layer, text_color);
+    text_layer_set_background_color(s_time_layer, bg_color);
+    text_layer_set_text_color(s_date_layer, text_color);
+    text_layer_set_background_color(s_date_layer, bg_color);
+    text_layer_set_text_color(s_bt_layer, text_color);
+    text_layer_set_background_color(s_bt_layer, bg_color);
+    text_layer_set_text_color(s_battery_layer, text_color);
+    text_layer_set_background_color(s_battery_layer, bg_color);
+    text_layer_set_text_color(s_temperature_layer, text_color);
+    text_layer_set_background_color(s_temperature_layer, bg_color);
 }
 
 static void on_ticked(struct tm *tick_time, TimeUnits units_changed) {
@@ -99,10 +143,27 @@ static void on_battery_level_changed(BatteryChargeState battery_level) {
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
     
     Tuple *temperature_tuple = dict_find(iterator, KEY_TEMPERATURE);
+    Tuple *light_color_scheme_tuple = dict_find(iterator, KEY_LIGHT_COLOR_SCHEME);
+    Tuple *degree_celsius_tuple = dict_find(iterator, KEY_DEGREE_CELSIUS);
     if (temperature_tuple) {
-        update_temperature(true, (int) temperature_tuple->value->int32);
-    } else {
-        update_temperature(false, 0);
+        int temperature = (int) temperature_tuple->value->int32;
+        update_temperature(true, temperature, is_degree_celsius());
+        persist_write_int(KEY_TEMPERATURE, temperature);
+    }
+    if (light_color_scheme_tuple) {
+        bool light_color_scheme = light_color_scheme_tuple->value->int8;
+        persist_write_bool(KEY_LIGHT_COLOR_SCHEME, light_color_scheme);
+        update_colors(light_color_scheme);
+    }
+    if (degree_celsius_tuple) {
+        bool degree_celsius = degree_celsius_tuple->value->int8;
+        persist_write_bool(KEY_DEGREE_CELSIUS, degree_celsius);
+        if (persist_exists(KEY_TEMPERATURE)) {
+           update_temperature(true, persist_read_int(KEY_TEMPERATURE), degree_celsius);
+        } else {
+           update_temperature(false, 0, degree_celsius);
+        }
+        
     }
 }
 
@@ -155,6 +216,12 @@ static void main_window_load(Window *window) {
     text_layer_set_font(s_temperature_layer, s_others_font);
     text_layer_set_text_alignment(s_temperature_layer, GTextAlignmentCenter);
     layer_add_child(window_layer, text_layer_get_layer(s_temperature_layer));
+
+    bool light_color_scheme = is_light_color_scheme();
+    if (light_color_scheme) {
+        update_colors(light_color_scheme);
+    }
+    
 }
 
 static void main_window_unload(Window *window) {
@@ -188,7 +255,7 @@ static void init() {
     update_bt(connection_service_peek_pebble_app_connection());
     BatteryChargeState charge_state = battery_state_service_peek();
     update_battery(charge_state.charge_percent);
-    update_temperature(false, 0);
+    update_temperature(false, 0, is_degree_celsius());
     
     // subsribe to services
     tick_timer_service_subscribe(MINUTE_UNIT, on_ticked);
