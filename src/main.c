@@ -218,7 +218,7 @@ static void main_window_load(Window *window) {
     layer_add_child(window_layer, text_layer_get_layer(s_temperature_layer));
 
     bool light_color_scheme = is_light_color_scheme();
-    if (light_color_scheme) {
+    if (!light_color_scheme) {
         update_colors(light_color_scheme);
     }
     
