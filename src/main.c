@@ -200,19 +200,19 @@ static void main_window_load(Window *window) {
     layer_add_child(window_layer, text_layer_get_layer(s_date_layer));
     
     // BT
-    s_bt_layer = text_layer_create(GRect(0, 110, bounds.size.w/3 , 25));
+    s_bt_layer = text_layer_create(GRect(PBL_IF_RECT_ELSE(bounds.size.w/20, bounds.size.w/5 - bounds.size.w/20), 110, PBL_IF_RECT_ELSE(bounds.size.w/3, bounds.size.w/5) , 25));
     text_layer_set_font(s_bt_layer, s_others_font);
     text_layer_set_text_alignment(s_bt_layer, GTextAlignmentCenter);
     layer_add_child(window_layer, text_layer_get_layer(s_bt_layer));
     
     // BATTERY
-    s_battery_layer = text_layer_create(GRect(bounds.size.w/3, 110, bounds.size.w/3, 25));
+    s_battery_layer = text_layer_create(GRect(PBL_IF_RECT_ELSE(bounds.size.w/3, 2 * bounds.size.w/5), 110, PBL_IF_RECT_ELSE(bounds.size.w/3, bounds.size.w/5), 25));
     text_layer_set_font(s_battery_layer, s_others_font);
     text_layer_set_text_alignment(s_battery_layer, GTextAlignmentCenter);
     layer_add_child(window_layer, text_layer_get_layer(s_battery_layer));
     
     // TEMPERATURE
-    s_temperature_layer = text_layer_create(GRect(2 * bounds.size.w/3, 110, bounds.size.w/3, 25));
+    s_temperature_layer = text_layer_create(GRect(PBL_IF_RECT_ELSE(2 * bounds.size.w/3 - bounds.size.w/20, 3 * bounds.size.w/5 + bounds.size.w/20), 110, PBL_IF_RECT_ELSE(bounds.size.w/3, bounds.size.w/5), 25));
     text_layer_set_font(s_temperature_layer, s_others_font);
     text_layer_set_text_alignment(s_temperature_layer, GTextAlignmentCenter);
     layer_add_child(window_layer, text_layer_get_layer(s_temperature_layer));
