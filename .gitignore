@@ -1,4 +1,5 @@
 build
-resources/fonts/neuropol_x_rg.ttf
+resources/fonts/
 API_KEY
 config/slate/
+.lock-waf_linux2_build
